@@ -1,0 +1,137 @@
+BACKEND
+
+1. Iniciar o projeto backend -> npm init -y
+
+2. Instalar o TypeScript -> npm install typescript --save-dev
+
+3. Iniciar o TypeScript -> npx tsc --init
+
+4. Instalar o Express -> npm install express
+
+5. Criando servidor Express
+
+   import express from "express";
+   import cors from "cors";
+   import { router } from "./src/routes.js";
+
+   const app = express();
+
+   app.use(express.json());
+   app.use(
+     cors({
+       origin: "http://localhost:3001",
+       credentials: true,
+     }),
+   );
+
+   app.use(router);
+
+   app.get("/", (request, response) => {
+      response.send("Hello World");
+   })
+
+   app.listen(3000, () => {
+     console.log("Servidor rodando na porta 3000");
+   });
+
+6. Configurar o package.json no início e também o script
+
+   "type": "module",
+
+   "scripts": {
+      "dev": "npx tsx watch --env-file=.env index.ts"
+   }
+
+7. Criar endpoints
+
+   app.METHOD("URL", (request, response) => {})
+
+   GET    -> Buscar dados
+   POST   -> Criar dados
+   PUT    -> Atualizar tudo
+   PATCH  -> Atualizar parcialmente
+   DELETE -> Deletar
+
+BANCO DE DADOS (Prisma + PostgreSQL + pgAdming 4)
+
+1. Criar banco de dados no pgAdmin 4
+
+2. Instalando o Prisma
+   npm install prisma @types/node @types/pg --save-dev
+   npm install @prisma/client @prisma/adapter-pg pg dotenv
+   npx prisma init --datasource-provider PostgreSQL --output ../generated/prisma
+
+3. Configurar a URL do banco de dados no .env
+
+4. Criar as tabelas no schema.prisma
+
+   model User {
+     id String @id @default(uuid())
+     name String
+     email String
+}
+
+5. Após mudanças no schema.prisma, é necessário utilizar o comando para gerar o Prisma Client -> npx prisma generate
+
+6. Forma de ver o banco de dados pelo navegador -> npx prisma studio
+
+7. Atualizar o backend
+   npx prisma db pull (Puxa a estrutura do banco para o Prisma)
+   npx prisma db push (Envia a estrutura do Prisma para o banco)
+
+8. Vinculando o backend com o prisma (Criar o arquivo db.ts e configura-lo)
+
+   src/db.ts
+
+      import "dotenv/config";
+      import { PrismaPg } from "@prisma/adapter-pg"
+      import { PrismaClient } from "../generated/prisma/client.js"
+
+      const connectionString = `${process.env.DATABASE_URL}`
+
+      const adapter = new PrismaPg ({ connectionString })
+      const prisma = new PrismaClient({ adapter })
+
+      export { prisma }
+
+      export async function connection (){
+        await prisma.$connect();
+        console.log("Conectado com o Banco de Dados")
+      }
+
+9. Importar o connection no index.ts
+
+   import express from "express"
+   import { connection } from "./src/db.js"
+   import cors from "cors";
+   import { router } from "./src/routes.js";
+
+   const app = express();
+
+   app.use(express.json());
+      app.use(
+        cors({
+          origin: "http://localhost:3001",
+          credentials: true,
+        }),
+   );
+
+   app.use(router);
+
+   connection();
+
+   app.get("/", (request, response) => {
+      response.send("Hello World");
+   })
+
+   app.listen(3000, () => {
+     console.log("Servidor rodando na porta 3000");
+   });
+
+EXEMPLO DE REQUISIÇÃO NO FRONTEND
+
+   const response = await fetch("URL", {
+     method: "POST",
+     headers: {"Content-Type": "application/json"},
+     body: JSON.stringify({ email, password }),
+});
